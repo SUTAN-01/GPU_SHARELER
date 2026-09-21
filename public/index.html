@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>算力共享网络</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">∿</div>
+        <div>
+          <div class="brand-name">算力共享网络</div>
+          <div class="brand-caption">multi-tenant compute pool</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="connection"><span class="pulse"></span><span id="connectionText">正在连接</span></div>
+        <button class="icon-button" id="resetDemo" title="重置演示数据">↺</button>
+        <button class="user-button" id="userButton"><span class="avatar">A</span><span id="currentUserName">Alice</span><span>⌄</span></button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="hero-row">
+        <div>
+          <div class="eyebrow">SHARED COMPUTE / 01</div>
+          <h1>把闲置算力<br><em>变成可用资源。</em></h1>
+          <p class="hero-copy">来自不同用户的 GPU 与 CPU，统一进入共享池。任务按资源槽位动态编排，数据与训练逻辑可接入隐语安全计算。</p>
+        </div>
+        <div class="hero-actions">
+          <button class="primary-button" id="openTaskModal"><span>＋</span> 创建计算任务</button>
+          <button class="secondary-button" id="openNodeModal"><span>⌁</span> 分享我的设备</button>
+        </div>
+      </section>
+
+      <section class="metric-grid" id="metrics"></section>
+
+      <section class="workspace-grid">
+        <div class="main-column">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">RESOURCE FABRIC</div>
+              <h2>共享资源池</h2>
+            </div>
+            <div class="legend"><span><i class="dot online"></i>在线</span><span><i class="dot busy"></i>部分使用</span><span><i class="dot offline"></i>离线</span></div>
+          </div>
+          <div class="resource-table-wrap">
+            <table>
+              <thead><tr><th>节点 / 所有人</th><th>平台</th><th>硬件</th><th>资源槽位</th><th>状态</th></tr></thead>
+              <tbody id="nodesTable"></tbody>
+            </table>
+          </div>
+
+          <div class="section-heading tasks-heading">
+            <div>
+              <div class="eyebrow">ORCHESTRATION</div>
+              <h2>任务编排</h2>
+            </div>
+            <div class="view-note">任务可以跨多个用户的设备并行执行</div>
+          </div>
+          <div class="task-list" id="tasksList"></div>
+        </div>
+
+        <aside class="side-column">
+          <div class="panel">
+            <div class="panel-heading"><div><div class="eyebrow">NETWORK PULSE</div><h3>网络动态</h3></div><span class="live-label">LIVE</span></div>
+            <div class="event-list" id="eventsList"></div>
+          </div>
+          <div class="panel privacy-panel">
+            <div class="eyebrow">PRIVACY LAYER</div>
+            <h3>隐语接入边界</h3>
+            <p>任务调度与资源隔离已经独立。后续可把训练容器接入 Kuscia，并将数据保留在数据拥有方，通过 SPU / HEU 完成安全聚合。</p>
+            <div class="stack">
+              <div><span class="stack-icon">P</span><span>PYU · 本地数据</span><b>READY</b></div>
+              <div><span class="stack-icon">S</span><span>SPU · 安全聚合</span><b>ADAPTER</b></div>
+              <div><span class="stack-icon">K</span><span>Kuscia · 任务编排</span><b>ADAPTER</b></div>
+            </div>
+          </div>
+          <div class="panel agent-panel">
+            <div class="eyebrow">NODE AGENT</div>
+            <h3>接入你的设备</h3>
+            <p>Windows 与 Linux 使用同一份轻量代理。注册后，心跳会持续上报资源状态。</p>
+            <code>npm run agent -- --server http://localhost:4317 --owner Alice</code>
+            <button class="text-button" id="copyAgentCommand">复制接入命令 <span>↗</span></button>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <div class="modal-backdrop hidden" id="modalBackdrop">
+      <div class="modal" role="dialog" aria-modal="true">
+        <button class="modal-close" id="closeModal">×</button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+    <div class="toast hidden" id="toast"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>
