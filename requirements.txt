@@ -1,0 +1,13 @@
+# GPU共享算力池依赖清单
+# 使用方法：py -3.12 -m pip install -r requirements.txt
+
+# PyTorch（根据你的CUDA版本选择，下面是CUDA 12.1示例）
+# 如果是CPU-only节点或不同CUDA版本，去 https://pytorch.org 获取对应命令
+torch>=2.0.0
+
+# gRPC（用于节点间RPC通信）
+grpcio>=1.60.0
+grpcio-tools>=1.60.0
+
+# 系统监控（可选，node_agent.py用于采集CPU/内存使用率）
+psutil>=5.9.0

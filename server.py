@@ -21,6 +21,11 @@ PORT = int(os.environ.get("PORT", "4317"))
 HEARTBEAT_TIMEOUT_SECONDS = 45
 LOCK = threading.RLock()
 
+# SSE 客户端连接管理
+SSE_CLIENTS = []
+SSE_CLIENTS_LOCK = threading.Lock()
+
+
 
 def now():
     return time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
@@ -48,58 +53,8 @@ def integer(value, default=0):
 def initial_state():
     created = now()
     return {
-        "users": [
-            # {"id": "user_alice", "name": "Alice", "role": "member", "createdAt": created},
-            # {"id": "user_bob", "name": "Bob", "role": "member", "createdAt": created},
-            # {"id": "user_carol", "name": "Carol", "role": "member", "createdAt": created},
-        ],
-        "nodes": [
-            # {
-            #     "id": "node_alice_4090",
-            #     "ownerId": "user_alice",
-            #     "name": "Alice 的工作站",
-            #     "platform": "win32",
-            #     "status": "online",
-            #     "lastSeenAt": created,
-            #     "cpuModel": "AMD Ryzen 9 7950X",
-            #     "cpuSlots": 8,
-            #     "gpuName": "NVIDIA RTX 4090",
-            #     "gpuSlots": 1,
-            #     "memoryGb": 24,
-            #     "labels": ["windows", "cuda", "training"],
-            #     "allocations": [],
-            # },
-            # {
-            #     "id": "node_bob_a6000",
-            #     "ownerId": "user_bob",
-            #     "name": "Bob 的 Linux GPU",
-            #     "platform": "linux",
-            #     "status": "online",
-            #     "lastSeenAt": created,
-            #     "cpuModel": "AMD EPYC 7543",
-            #     "cpuSlots": 16,
-            #     "gpuName": "NVIDIA RTX A6000",
-            #     "gpuSlots": 2,
-            #     "memoryGb": 48,
-            #     "labels": ["linux", "cuda", "secure"],
-            #     "allocations": [],
-            # },
-            # {
-            #     "id": "node_carol_cpu",
-            #     "ownerId": "user_carol",
-            #     "name": "Carol 的 CPU 节点",
-            #     "platform": "linux",
-            #     "status": "online",
-            #     "lastSeenAt": created,
-            #     "cpuModel": "Intel Xeon Gold 6338",
-            #     "cpuSlots": 24,
-            #     "gpuName": "",
-            #     "gpuSlots": 0,
-            #     "memoryGb": 64,
-            #     "labels": ["linux", "cpu", "batch"],
-            #     "allocations": [],
-            # },
-        ],
+        "users": [],
+        "nodes": [],
         "tasks": [],
         "events": [
             {
@@ -117,7 +72,54 @@ def save_state():
     temporary = STATE_FILE.with_suffix(".tmp")
     temporary.write_text(json.dumps(STATE, ensure_ascii=False, indent=2), encoding="utf-8")
     temporary.replace(STATE_FILE)
+    broadcast_state_update()
 
+def broadcast_state_update():
+    with SSE_CLIENTS_LOCK:
+        if not SSE_CLIENTS:
+            return
+
+        state = public_state()
+        total_gpu = sum(node.get("gpuSlots", 0) for node in STATE["nodes"])
+        total_cpu = sum(node.get("cpuSlots", 0) for node in STATE["nodes"])
+
+        used_gpu = sum(task.get("gpuUsed", 0) for task in STATE["tasks"])
+        used_cpu = sum(task.get("cpuUsed", 0) for task in STATE["tasks"])
+
+        online_nodes = [node for node in STATE["nodes"] if node.get("status") == "online"]
+        running_tasks = [task for task in STATE["tasks"] if task.get("status") == "running"]
+
+        message = json.dumps({
+            "type": "state_update",
+            "timestamp": now(),
+            "summary": {
+                "totalGpu": total_gpu,
+                "totalCpu": total_cpu,
+                "usedGpu": used_gpu,
+                "usedCpu": used_cpu,
+                "availableGpu": total_gpu - used_gpu,
+                "availableCpu": total_cpu - used_cpu,
+                "onlineNodes": online_nodes,
+                "totalNodes": len(state["nodes"]),
+                "runningTasks": running_tasks,
+                "totalTasks": len(state["tasks"]),
+            },
+            "nodes": state["nodes"],
+            "tasks": state["tasks"][:5],  # 只发送最近5个任务
+        }, ensure_ascii=False)
+
+        data = f"data: {message}\n\n".encode("utf-8")
+
+        disconnected = []
+        for client in SSE_CLIENTS:
+            try:
+                client.wfile.write(data)
+                client.wfile.flush()
+            except BrokenPipeError:
+                disconnected.append(client)
+
+        for client in disconnected:
+            SSE_CLIENTS.remove(client)
 
 def load_state():
     try:
@@ -336,6 +338,61 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format_string, *args):
         print(f"[{self.log_date_time_string()}] {format_string % args}")
 
+    def handle_sse(self):
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+
+        with LOCK:
+            state = public_state()
+            totle_gpu = sum(node.get("gpu", 0) for node in state["nodes"])
+            total_cpu = sum(node.get("cpu", 0) for node in state["nodes"])
+            used_gpu = sum(node.get("allocatedGpu", 0) for node in state["nodes"])
+            used_cpu = sum(node.get("allocatedCpu", 0) for node in state["nodes"])
+            online_nodes = [node for node in state["nodes"] if node.get("status") == "online"]
+            running_tasks = [task for task in state["tasks"] if task.get("status") == "running"]
+
+            initial = json.dumps({
+                "type": "connected",
+                "timestamp": now(),
+                "summary": {
+                    "totalGpu": totle_gpu,
+                    "totalCpu": total_cpu,
+                    "usedGpu": used_gpu,
+                    "usedCpu": used_cpu,
+                    "availableGpu": totle_gpu - used_gpu,
+                    "availableCpu": total_cpu - used_cpu,
+                    "onlineNodes": online_nodes,
+                    "totalNodes": len(state["nodes"]),
+                    "runningTasks": running_tasks,
+                    "totalTasks": len(state["tasks"]),
+                },
+                "nodes": state["nodes"],
+                "tasks": state["tasks"][:5],
+            }, ensure_ascii=False)
+
+            try:
+                self.wfile.write(f"data: {initial}\n\n".encode("utf-8"))
+                self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                return
+
+        with SSE_CLIENTS_LOCK:
+            SSE_CLIENTS.append(self)
+
+        try:
+            while True:
+                time.sleep(30)
+                self.wfile.write(": heartbeat\n\n".encode("utf-8"))
+                self.wfile.flush()
+
+        except (BrokenPipeError, ConnectionResetError):
+            with SSE_CLIENTS_LOCK:
+                SSE_CLIENTS.remove(self)
+
     def send_json(self, status, payload):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -365,6 +422,8 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/api/state":
             with LOCK:
                 return self.send_json(HTTPStatus.OK, public_state())
+        if parsed.path == "/api/events":
+            return self.handle_sse()
         return self.serve_static(parsed.path)
 
     def do_POST(self):
@@ -418,6 +477,9 @@ class Handler(BaseHTTPRequestHandler):
                 "labels": [str(item) for item in body.get("labels", [])][:10],
                 "agentManaged": bool(body.get("agentManaged", False)),
                 "allocations": [],
+                "rpcAddress": str(body.get("rpcAddress") or "")[:64],
+                "availableForWork": bool(body.get("availableForWork", True)),
+                
             }
             if not existing:
                 STATE["nodes"].append(node)
@@ -442,6 +504,29 @@ class Handler(BaseHTTPRequestHandler):
                 node["gpuSlots"] = clamp(integer(body["gpuSlots"]), 0, 16)
             if "memoryGb" in body:
                 node["memoryGb"] = clamp(integer(body["memoryGb"]), 0, 2048)
+            if "cpuSlots" in body:
+                node["cpuSlots"] = clamp(integer(body["cpuSlots"]), 0, 256)
+            if "gpuSlots" in body:
+                node["gpuSlots"] = clamp(integer(body["gpuSlots"]), 0, 16)
+            if "memoryGb" in body:
+                node["memoryGb"] = clamp(integer(body["memoryGb"]), 0, 2048)
+            # 新增：接收实时使用率数据
+            if "rpcAddress" in body:
+                node["rpcAddress"] = str(body["rpcAddress"])[:64]
+            if "availableForWork" in body:
+                node["availableForWork"] = bool(body["availableForWork"])
+            if "cpuPercent" in body:
+                node["cpuPercent"] = clamp(number(body["cpuPercent"]), 0, 100)
+            if "memoryTotalGb" in body:
+                node["memoryTotalGb"] = number(body["memoryTotalGb"])
+            if "memoryUsedGb" in body:
+                node["memoryUsedGb"] = number(body["memoryUsedGb"])
+            if "memoryPercent" in body:
+                node["memoryPercent"] = clamp(number(body["memoryPercent"]), 0, 100)
+            if "gpuMemoryUsedGb" in body:
+                node["gpuMemoryUsedGb"] = number(body["gpuMemoryUsedGb"])
+            if "gpuUtilizationPercent" in body:
+                node["gpuUtilizationPercent"] = clamp(number(body["gpuUtilizationPercent"]), 0, 100)
             save_state()
             return self.send_json(HTTPStatus.OK, normalize_node(node))
 

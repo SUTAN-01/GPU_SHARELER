@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package gpu_share;
+
+// 算子执行服务，运行在 worker 节点上，接收 coordinator 的远程算子调用
+service OpExecutor {
+  rpc ExecuteOp(ExecuteOpRequest) returns (ExecuteOpResponse);
+}
+
+message ExecuteOpRequest {
+  string op_name = 1;           // 算子名（必须在 ALLOWED_OPS 白名单内）
+  repeated bytes tensors = 2;   // 输入张量，用 torch.save 序列化后的字节流
+  string token = 3;             // 认证令牌（HMAC派生自 GPU_SHARE_SECRET）
+
+  // 未来如果要支持非张量参数（stride/padding等），在这里加字段，例如：
+  // map<string, int32> int_params = 4;
+  // map<string, float> float_params = 5;
+}
+
+message ExecuteOpResponse {
+  bytes result = 1;             // 输出张量，用 torch.save 序列化后的字节流
+  // 未来可加错误码、性能指标等字段
+}

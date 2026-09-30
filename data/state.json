@@ -1,20 +1,20 @@
 {
   "users": [
     {
-      "id": "user_87b820ac4d",
+      "id": "user_f8e9f76caf",
       "name": "tan",
       "role": "member",
-      "createdAt": "2026-09-21T08:58:46.000Z"
+      "createdAt": "2026-09-29T09:23:25.000Z"
     }
   ],
   "nodes": [
     {
-      "id": "node_f69c00ce5d",
-      "ownerId": "user_87b820ac4d",
+      "id": "node_02a37d4461",
+      "ownerId": "user_f8e9f76caf",
       "name": "UTOPAY · Windows",
       "platform": "win32",
       "status": "online",
-      "lastSeenAt": "2026-09-21T09:07:23.000Z",
+      "lastSeenAt": "2026-09-30T06:28:41.000Z",
       "cpuModel": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
       "cpuSlots": 16,
       "gpuName": "NVIDIA GeForce RTX 4060 Laptop GPU",
@@ -25,155 +25,65 @@
         "cuda"
       ],
       "agentManaged": true,
-      "allocations": []
+      "allocations": [],
+      "cpuPercent": 0.8,
+      "memoryTotalGb": 31.7,
+      "memoryUsedGb": 16.4,
+      "memoryPercent": 51.6,
+      "gpuMemoryUsedGb": 98.0,
+      "gpuUtilizationPercent": 4.0,
+      "rpcAddress": "10.5.185.161:50051"
     }
   ],
-  "tasks": [
-    {
-      "id": "task_edf93ce4ed",
-      "requesterId": "user_87b820ac4d",
-      "name": "联邦训练实验 17:06",
-      "framework": "PyTorch",
-      "resourceType": "gpu",
-      "workers": 2,
-      "durationSeconds": 45,
-      "privacyMode": "secure-aggregate",
-      "command": "python train.py --epochs 10",
-      "createdAt": "2026-09-21T09:06:41.000Z",
-      "startedAt": "2026-09-21T09:07:15.000Z",
-      "completedAt": "2026-09-21T09:08:00.000Z",
-      "updatedAt": "2026-09-21T09:08:00.000Z",
-      "status": "completed",
-      "progress": 100,
-      "allocatedWorkers": 1,
-      "assignments": [
-        {
-          "id": "assign_7b72dbfac8",
-          "taskId": "task_edf93ce4ed",
-          "nodeId": "node_f69c00ce5d",
-          "ownerId": "user_87b820ac4d",
-          "resourceType": "gpu",
-          "unitIndex": 1,
-          "status": "completed",
-          "startedAt": "2026-09-21T09:07:15.000Z"
-        }
-      ]
-    },
-    {
-      "id": "task_3d8d2d6181",
-      "requesterId": "user_87b820ac4d",
-      "name": "联邦训练实验 17:06",
-      "framework": "PyTorch",
-      "resourceType": "gpu",
-      "workers": 1,
-      "durationSeconds": 45,
-      "privacyMode": "secure-aggregate",
-      "command": "python train.py --epochs 10",
-      "createdAt": "2026-09-21T09:06:31.000Z",
-      "startedAt": "2026-09-21T09:06:31.000Z",
-      "completedAt": "2026-09-21T09:07:15.000Z",
-      "updatedAt": "2026-09-21T09:07:15.000Z",
-      "status": "completed",
-      "progress": 100,
-      "allocatedWorkers": 1,
-      "assignments": [
-        {
-          "id": "assign_fc22669082",
-          "taskId": "task_3d8d2d6181",
-          "nodeId": "node_f69c00ce5d",
-          "ownerId": "user_87b820ac4d",
-          "resourceType": "gpu",
-          "unitIndex": 1,
-          "status": "completed",
-          "startedAt": "2026-09-21T09:06:31.000Z"
-        }
-      ]
-    }
-  ],
+  "tasks": [],
   "events": [
     {
-      "id": "evt_0dcea81d56",
-      "type": "task",
-      "message": "tan 的任务已完成",
-      "at": "2026-09-21T09:08:00.000Z",
-      "taskId": "task_edf93ce4ed"
-    },
-    {
-      "id": "evt_15eae92de4",
-      "type": "task",
-      "message": "tan 的任务新增分配 1 个 worker（共 1/2）",
-      "at": "2026-09-21T09:07:15.000Z",
-      "taskId": "task_edf93ce4ed"
-    },
-    {
-      "id": "evt_4102771114",
-      "type": "task",
-      "message": "tan 的任务已完成",
-      "at": "2026-09-21T09:07:15.000Z",
-      "taskId": "task_3d8d2d6181"
-    },
-    {
-      "id": "evt_ed8b448a28",
-      "type": "task",
-      "message": "tan 创建了任务：联邦训练实验 17:06",
-      "at": "2026-09-21T09:06:41.000Z",
-      "taskId": "task_edf93ce4ed"
-    },
-    {
-      "id": "evt_9b1750ca7f",
-      "type": "task",
-      "message": "tan 创建了任务：联邦训练实验 17:06",
-      "at": "2026-09-21T09:06:31.000Z",
-      "taskId": "task_3d8d2d6181"
-    },
-    {
-      "id": "evt_27bd29d942",
-      "type": "task",
-      "message": "tan 的任务新增分配 1 个 worker（共 1/1）",
-      "at": "2026-09-21T09:06:31.000Z",
-      "taskId": "task_3d8d2d6181"
-    },
-    {
-      "id": "evt_04a5d76bd5",
+      "id": "evt_6de5e0e34a",
       "type": "node",
       "message": "tan UTOPAY · Windows 上线",
-      "at": "2026-09-21T09:06:23.000Z"
+      "at": "2026-09-30T06:27:39.000Z"
     },
     {
-      "id": "evt_245f57483c",
+      "id": "evt_c409ff2d34",
       "type": "node",
       "message": "tan UTOPAY · Windows 上线",
-      "at": "2026-09-21T09:05:00.000Z"
+      "at": "2026-09-30T06:25:44.000Z"
     },
     {
-      "id": "evt_739462a4eb",
+      "id": "evt_e3b4ba137e",
       "type": "node",
       "message": "tan UTOPAY · Windows 上线",
-      "at": "2026-09-21T09:03:27.000Z"
+      "at": "2026-09-30T06:23:38.000Z"
     },
     {
-      "id": "evt_44d16aab9d",
+      "id": "evt_4357ded365",
       "type": "node",
       "message": "tan UTOPAY · Windows 上线",
-      "at": "2026-09-21T08:59:40.000Z"
+      "at": "2026-09-30T06:19:56.000Z"
     },
     {
-      "id": "evt_d9c820606d",
+      "id": "evt_71edaf957c",
+      "type": "node",
+      "message": "tan UTOPAY · Windows 上线",
+      "at": "2026-09-29T09:37:45.000Z"
+    },
+    {
+      "id": "evt_9f8f7f2137",
       "type": "node",
       "message": "tan 创建了 UTOPAY · Windows",
-      "at": "2026-09-21T08:58:46.000Z"
+      "at": "2026-09-29T09:23:25.000Z"
     },
     {
-      "id": "evt_0541af1ccd",
+      "id": "evt_f5adc6b107",
       "type": "user",
       "message": "tan 加入了共享网络",
-      "at": "2026-09-21T08:58:46.000Z"
+      "at": "2026-09-29T09:23:25.000Z"
     },
     {
-      "id": "evt_d4ba25c98c",
+      "id": "evt_63d0e7c62a",
       "type": "system",
       "message": "共享资源池已初始化",
-      "at": "2026-09-21T08:58:45.000Z"
+      "at": "2026-09-29T09:21:18.000Z"
     }
   ]
 }
