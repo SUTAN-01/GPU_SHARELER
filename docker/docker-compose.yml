@@ -1,0 +1,29 @@
+services:
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/worker.Dockerfile
+    container_name: gpu_share_worker
+    ports:
+      - "50051:50051"
+    environment:
+      - GPU_SHARE_SECRET=${GPU_SHARE_SECRET:-}
+    networks:
+      - gpu_share_net
+
+  coordinator:
+    build:
+      context: ..
+      dockerfile: docker/coordinator.Dockerfile
+    container_name: gpu_share_coordinator
+    depends_on:
+      - worker
+    environment:
+      - WORKER_ADDR=worker:50051
+      - GPU_SHARE_AUTH_TOKEN=${GPU_SHARE_SECRET:-}
+    networks:
+      - gpu_share_net
+
+networks:
+  gpu_share_net:
+    driver: bridge
